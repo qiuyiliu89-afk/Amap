@@ -22,11 +22,12 @@ import {
 export type ContentPackageStatus =
   | "ark-content-success"
   | "ark-content-repaired"
+  | "ark-content-regenerated"
   | "ark-content-parse-failed"
   | "ark-content-request-failed"
   | "fallback";
 
-export type ContentPackageSource = "ark-content-success" | "ark-content-repaired" | "fallback";
+export type ContentPackageSource = "ark-content-success" | "ark-content-repaired" | "ark-content-regenerated" | "fallback";
 
 export interface GenerateContentPackageResult {
   contentPackage: ContentPackage;
@@ -1088,6 +1089,102 @@ Campaign Prompt:
 ${pipelineInput.campaignPrompt.content}`;
 }
 
+function buildCompactRegenerationPrompt(
+  pipelineInput: PipelineInput,
+  platforms: Platform[],
+  previousFailure: string,
+) {
+  const platformNames = platforms.map((platform) => platformLabels[platform]).join("、");
+  const videoDurationSeconds = inferVideoDurationSeconds(pipelineInput.rawRequirement.content);
+  const videoDurationLabel = formatVideoDuration(videoDurationSeconds);
+
+  return `上一次 Content Package JSON 无法解析或缺少关键字段，原因：${previousFailure}
+
+请重新生成一份更小、更稳定、可直接 JSON.parse 的 Content Package JSON。
+
+硬性要求：
+- 只返回一个 JSON object，以 { 开始，以 } 结束。
+- 不要 Markdown，不要代码块，不要解释。
+- selectedPlatforms = ${JSON.stringify(platforms)}，目标平台名称 = ${platformNames}。
+- 只生成 selectedPlatforms 对应的平台资产，不要扩展平台。
+- 每个平台只生成 1 套内容，数组保持精简：标题候选最多 3 个，Hook 候选最多 2 个，脚本 / 分镜最多 6 条。
+- 短视频目标时长 = ${videoDurationLabel}；可以用 6 条时间轴概括完整视频，不要输出长篇逐秒脚本。
+- 小红书 carouselCards 输出 6 页即可，每页 body 不超过 35 个汉字。
+- 视觉 Prompt 必须是无文字背景图方向，不要 Logo、水印、UI 文案或可读文字。
+- JSON 字符串内部不要使用未转义英文双引号；需要引用时使用中文引号。
+- 不要输出 publishPackages；前端会根据 platformAssets 自动补齐发布包。
+- 如果接近长度限制，优先缩短文案，绝不能截断 JSON。
+
+必须返回的最小 JSON schema：
+{
+  "campaignStrategy": {
+    "coreConcept": "string",
+    "userPainPoints": ["string"],
+    "productSellingPoints": ["string"],
+    "platformStrategy": { "selectedPlatforms": "string" },
+    "contentAngles": ["string"]
+  },
+  "platformAssets": {
+${buildPlatformAssetsSchema(platforms)}
+  },
+  "visualPrompts": {
+${buildVisualPromptsSchema(platforms)}
+  },
+  "renderHints": {
+    "theme": "string",
+    "colorPalette": ["#38bdf8", "#5eead4"],
+    "visualMood": "string",
+    "routeStyle": "string",
+    "backgroundType": "string",
+    "keyObjects": ["string"],
+    "cityMood": "string",
+    "platformLayout": { "selected": "string" }
+  },
+  "qualityScore": {
+    "total": 4.6,
+    "hookStrength": 4.6,
+    "platformFit": 4.6,
+    "brandConsistency": 4.6,
+    "painPointClarity": 4.6,
+    "visualFeasibility": 4.6,
+    "localization": 4.4,
+    "freshness": 4.5,
+    "riskLevel": 4.8,
+    "totalScore": 92,
+    "dimensions": [{ "label": "平台适配", "score": 4.6, "note": "string" }]
+  },
+  "rewriteSuggestions": {
+    "issuesFound": ["string"],
+    "suggestions": ["string"],
+    "improvedHook": "string",
+    "improvedCaption": "string",
+    "improvedVisualPrompt": "string"
+  },
+  "exportPackage": {
+    "markdownSummary": "string",
+    "csvRows": [{ "platform": "string", "format": "string", "title": "string", "score": 92 }],
+    "jsonReady": true,
+    "assetsChecklist": ["string"],
+    "generatedAt": "ISO string"
+  }
+}
+
+原始需求：
+${pipelineInput.rawRequirement.content}
+
+Campaign Prompt 摘要：
+${pipelineInput.campaignPrompt.content.slice(0, 2200)}`;
+}
+
+function getCompactRegenerationTokenBudget(platforms: Platform[]) {
+  let budget = 2600;
+  if (platforms.includes("xiaohongshu")) budget += 500;
+  if (platforms.some((platform) => ["douyin", "tiktok", "youtube_shorts"].includes(platform))) budget += 900;
+  if (platforms.includes("instagram")) budget += 350;
+  if (platforms.includes("push_banner")) budget += 250;
+  return Math.min(4600, budget);
+}
+
 function getContentPackageTokenBudget(platforms: Platform[]) {
   let budget = 1600;
 
@@ -1341,6 +1438,36 @@ export async function generateContentPackageWithArk(
         rawResponse: getDebugResponse(rawResponse),
       };
     } catch (repairFailure) {
+      try {
+        const regeneratedResponse = await requestArkContentPackageWithRetry({
+          systemPrompt,
+          userPrompt: buildCompactRegenerationPrompt(
+            pipelineInput,
+            platforms,
+            [parseError, getErrorMessage(repairFailure)].join(" "),
+          ),
+          maxOutputTokens: getCompactRegenerationTokenBudget(platforms),
+          timeoutMs: 60000,
+          maxAttempts: 2,
+          label: "Ark compact Content Package regeneration request",
+        });
+        const regenerated = parseContentPackageJSON(regeneratedResponse, { allowLocalRepair: true });
+        const usablePayload = assertUsableContentPackagePayload(regenerated.value, platforms);
+
+        return {
+          contentPackage: normalizeContentPackage(
+            usablePayload,
+            fallback,
+            platforms,
+            pipelineInput.rawRequirement.content,
+          ),
+          source: "ark-content-regenerated",
+          fallback: false,
+          status: "ark-content-regenerated",
+          rawResponse: getDebugResponse(regeneratedResponse),
+          parseError,
+        };
+      } catch (regenerationFailure) {
       return {
         contentPackage: fallback,
         source: "fallback",
@@ -1348,8 +1475,9 @@ export async function generateContentPackageWithArk(
         status: "ark-content-parse-failed",
         rawResponse: getDebugResponse(rawResponse),
         parseError,
-        errorMessage: `JSON repair failed: ${getErrorMessage(repairFailure)}`,
+        errorMessage: `JSON repair failed: ${getErrorMessage(repairFailure)} Compact regeneration failed: ${getErrorMessage(regenerationFailure)}`,
       };
+      }
     }
   }
 }

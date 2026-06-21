@@ -166,6 +166,7 @@ export interface PipelineRunState {
   contentPackageStatus?:
     | "ark-content-success"
     | "ark-content-repaired"
+    | "ark-content-regenerated"
     | "ark-content-parse-failed"
     | "ark-content-request-failed"
     | "fallback";

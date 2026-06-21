@@ -8,6 +8,8 @@ Render image responses use the camelCase field `imageUrl`. The browser image cli
 
 Pipeline state includes a runtime version. After this deployment, a browser holding an older completed fallback run automatically executes the Pipeline once with the new async transport instead of continuing to display stale localStorage output.
 
+Content Package generation now has a compact regeneration pass. If the first Ark JSON and JSON repair both fail parsing or minimum usability checks, the frontend asks Ark for a smaller schema without `publishPackages`; the normalizer then reconstructs publish-ready packages locally. Successful compact regeneration is labeled `ark-content-regenerated` instead of fallback.
+
 ## 2026-06-21 Update: Campaign Prompt Completeness Guard
 
 Campaign Prompt generation now requires all six sections to appear in order with usable content: `Role`, `Campaign Context`, `Content Tasks`, `Visual Tasks`, `Quality Criteria`, and `Output Format`. The Ark output budget is increased to avoid truncating the structured result. If JSON repair still produces a partial Prompt, the app sends the original requirement and platform configuration back to Ark for one complete regeneration and labels that result `ark-regenerated`. Only when generation, repair, and regeneration all fail does the app use the complete local Prompt fallback.

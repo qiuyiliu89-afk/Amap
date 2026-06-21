@@ -62,6 +62,9 @@ function getContentPackageMode(status: PipelineRunState) {
   if (status.source === "ark-content-repaired") {
     return { label: "Ark repaired Content Package mode", tone: "green" as const };
   }
+  if (status.source === "ark-content-regenerated") {
+    return { label: "Ark compact regenerated mode", tone: "green" as const };
+  }
   return { label: "Fallback Content Package mode", tone: "orange" as const };
 }
 
@@ -71,6 +74,9 @@ function getContentPackageApiStatus(status: PipelineRunState) {
   }
   if (status.contentPackageStatus === "ark-content-repaired") {
     return { label: "Ark repaired Content Package mode", tone: "green" as const };
+  }
+  if (status.contentPackageStatus === "ark-content-regenerated") {
+    return { label: "Ark compact regenerated mode", tone: "green" as const };
   }
   if (status.contentPackageStatus === "ark-content-parse-failed") {
     return { label: "API returned, JSON parse failed", tone: "orange" as const };
@@ -95,6 +101,7 @@ function hasCurrentContentPackageStatus(status: PipelineRunState) {
   return [
     "ark-content-success",
     "ark-content-repaired",
+    "ark-content-regenerated",
     "ark-content-parse-failed",
     "ark-content-request-failed",
     "fallback",

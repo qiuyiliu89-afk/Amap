@@ -38,7 +38,7 @@ const definitions = [
   ["export", "导出发布包", "整理 Markdown、JSON、CSV 和资产检查清单。"],
 ] as const;
 
-export const pipelineRuntimeVersion = 2;
+export const pipelineRuntimeVersion = 3;
 
 export function createInitialPipelineSteps(): PipelineStepState[] {
   return definitions.map(([id, title, description], index) => ({
@@ -79,6 +79,7 @@ function getSelectedPlatforms(pipelineInput: PipelineInput): Platform[] {
 function getPackageModeLabel(contentStatus: ContentPackageStatus | null) {
   if (contentStatus === "ark-content-success") return "Ark Content Package mode";
   if (contentStatus === "ark-content-repaired") return "Ark repaired Content Package mode";
+  if (contentStatus === "ark-content-regenerated") return "Ark compact regenerated Content Package mode";
   if (contentStatus === "ark-content-parse-failed") return "API returned, JSON parse failed";
   if (contentStatus === "ark-content-request-failed") return "API request failed";
   return "Fallback Content Package mode";
