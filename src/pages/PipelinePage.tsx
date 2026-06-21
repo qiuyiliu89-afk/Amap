@@ -17,6 +17,7 @@ import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import {
   createInitialPipelineSteps,
+  pipelineRuntimeVersion,
   runPromptPipeline,
 } from "../ai/workflow/runPromptPipeline";
 import { Badge } from "../components/ui/Badge";
@@ -102,6 +103,7 @@ function hasCurrentContentPackageStatus(status: PipelineRunState) {
 
 function createIdleStatus(): PipelineRunState {
   return {
+    pipelineVersion: pipelineRuntimeVersion,
     status: "idle",
     currentStep: -1,
     completedSteps: 0,
@@ -163,6 +165,7 @@ export function PipelinePage() {
 
   const shouldRun = Boolean(
     pipelineInput && !(
+      pipelineStatus.pipelineVersion === pipelineRuntimeVersion &&
       pipelineStatus.status === "completed" &&
       contentReady &&
       hasCurrentContentPackageStatus(pipelineStatus)

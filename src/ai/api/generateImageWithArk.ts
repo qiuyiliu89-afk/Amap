@@ -61,8 +61,10 @@ function extractImageUrl(payload: unknown) {
     firstResultItem?.image_url,
     result?.url,
     result?.image_url,
+    result?.imageUrl,
     payload.url,
     payload.image_url,
+    payload.imageUrl,
   ];
 
   for (const candidate of candidates) {

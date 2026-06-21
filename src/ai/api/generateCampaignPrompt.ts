@@ -562,6 +562,7 @@ async function callArkText({
     temperature: 0.2,
     maxOutputTokens,
     responseFormat,
+    asyncJob: true,
     ...(includeThinking ? { thinking: { type: "disabled" } } : {}),
   });
 

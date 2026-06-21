@@ -1120,6 +1120,7 @@ async function requestArkContentPackage(
       maxOutputTokens,
       signal,
       stream: true,
+      asyncJob: true,
       onStreamActivity,
       ...(useResponseFormat ? { responseFormat: { type: "json_object" } } : {}),
       ...(disableThinking ? { thinking: { type: "disabled" } } : {}),

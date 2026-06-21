@@ -13,6 +13,7 @@ export type ArkResponseTextParams = {
   stream?: boolean;
   onStreamActivity?: () => void;
   signal?: AbortSignal;
+  asyncJob?: boolean;
 };
 
 export class ArkResponseFormatUnsupportedError extends Error {
@@ -40,6 +41,60 @@ function getArkResponseEndpoint() {
 
 function getString(value: unknown) {
   return typeof value === "string" && value.trim() ? value.trim() : "";
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function waitForPoll(ms: number, signal?: AbortSignal) {
+  return new Promise<void>((resolve, reject) => {
+    const timer = window.setTimeout(resolve, ms);
+    signal?.addEventListener("abort", () => {
+      window.clearTimeout(timer);
+      reject(new DOMException("Ark response job polling aborted", "AbortError"));
+    }, { once: true });
+  });
+}
+
+async function pollArkResponseJob(
+  jobId: string,
+  options: {
+    responseFormat?: Record<string, unknown>;
+    thinking?: Record<string, unknown>;
+    onStreamActivity?: () => void;
+    signal?: AbortSignal;
+  },
+) {
+  const deadline = Date.now() + 330000;
+  const endpoint = new URL(getArkResponseEndpoint(), window.location.href);
+  endpoint.searchParams.set("job", jobId);
+
+  while (Date.now() < deadline) {
+    await waitForPoll(1800, options.signal);
+    const response = await fetch(endpoint.toString(), { signal: options.signal });
+    const rawText = await response.text();
+    options.onStreamActivity?.();
+
+    let payload: unknown = null;
+    try {
+      payload = rawText ? JSON.parse(rawText) : null;
+    } catch {
+      payload = rawText;
+    }
+
+    if (!response.ok) {
+      throw createArkRequestError(
+        getErrorDetail(rawText),
+        response.status,
+        { responseFormat: options.responseFormat, thinking: options.thinking },
+      );
+    }
+    if (isRecord(payload) && payload.jobStatus === "running") continue;
+    return payload;
+  }
+
+  throw new Error("Ark response job timed out after 330000ms.");
 }
 
 function flattenErrorValue(value: unknown, parts: string[] = []) {
@@ -192,6 +247,7 @@ export async function arkResponseText({
   stream,
   onStreamActivity,
   signal,
+  asyncJob,
 }: ArkResponseTextParams): Promise<string> {
   let heartbeat = 0;
 
@@ -215,6 +271,7 @@ export async function arkResponseText({
         responseFormat,
         thinking,
         stream,
+        async: asyncJob,
       }),
     });
 
@@ -230,6 +287,18 @@ export async function arkResponseText({
       data = rawText ? JSON.parse(rawText) : null;
     } catch {
       data = rawText;
+    }
+
+    if (asyncJob && isRecord(data)) {
+      const jobId = getString(data.jobId);
+      if (jobId) {
+        data = await pollArkResponseJob(jobId, {
+          responseFormat,
+          thinking,
+          onStreamActivity,
+          signal,
+        });
+      }
     }
 
     return extractResponseText(data, { responseFormat, thinking });

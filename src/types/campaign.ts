@@ -152,6 +152,7 @@ export interface VisualAssetsPackage {
 }
 
 export interface PipelineRunState {
+  pipelineVersion?: number;
   status: "idle" | "running" | "completed" | "failed";
   currentStep: number;
   completedSteps: number;

@@ -1,4 +1,5 @@
 import { createServer } from "node:http";
+import { randomUUID } from "node:crypto";
 
 const defaultArkBaseUrl = "https://ark.cn-beijing.volces.com/api/v3";
 const port = Number(process.env.PORT || 10000);
@@ -9,6 +10,18 @@ const arkRetryBaseDelayMs = Number(process.env.ARK_RETRY_BASE_DELAY_MS || 2500);
 const arkImageRequestGapMs = Number(process.env.ARK_IMAGE_REQUEST_GAP_MS || 2500);
 
 let imageRequestQueue = Promise.resolve();
+const arkResponseJobs = new Map();
+const arkResponseJobTtlMs = 10 * 60 * 1000;
+
+function pruneArkResponseJobs() {
+  const cutoff = Date.now() - arkResponseJobTtlMs;
+  for (const [jobId, job] of arkResponseJobs.entries()) {
+    if (job.updatedAt < cutoff) arkResponseJobs.delete(jobId);
+  }
+}
+
+const jobCleanupTimer = setInterval(pruneArkResponseJobs, 60000);
+jobCleanupTimer.unref();
 
 function getAllowedOrigins() {
   const raw = process.env.ALLOWED_ORIGIN || process.env.ALLOWED_ORIGINS || "*";
@@ -435,10 +448,95 @@ function getRequestSummary(config) {
   };
 }
 
+async function runArkResponseRequest(config, payload) {
+  const arkResult = await fetchCompatibleArkResponse(config, payload);
+
+  if (!arkResult.ok) {
+    return {
+      ok: false,
+      status: arkResult.status,
+      error: `Ark Responses API request failed: status ${arkResult.status}.`,
+      detail: arkResult.detail,
+      fallback: arkResult.fallback,
+    };
+  }
+
+  const text = payload.stream
+    ? await extractStreamingResponseText(arkResult.response)
+    : extractResponseText(await arkResult.response.json());
+
+  return { ok: true, text, compatibility: arkResult.fallback };
+}
+
+function startArkResponseJob(config, payload) {
+  pruneArkResponseJobs();
+  const jobId = randomUUID();
+  const now = Date.now();
+  arkResponseJobs.set(jobId, {
+    jobStatus: "running",
+    createdAt: now,
+    updatedAt: now,
+  });
+
+  void runArkResponseRequest(config, payload)
+    .then((result) => {
+      arkResponseJobs.set(jobId, {
+        jobStatus: "complete",
+        result,
+        createdAt: now,
+        updatedAt: Date.now(),
+      });
+    })
+    .catch((error) => {
+      arkResponseJobs.set(jobId, {
+        jobStatus: "complete",
+        result: {
+          ok: false,
+          status: 500,
+          error: error instanceof Error ? error.message : "Unknown Ark response job error.",
+        },
+        createdAt: now,
+        updatedAt: Date.now(),
+      });
+    });
+
+  return jobId;
+}
+
+function sendArkResponseJob(req, res, jobId) {
+  pruneArkResponseJobs();
+  const job = arkResponseJobs.get(jobId);
+  if (!job) {
+    sendJson(req, res, 404, {
+      ok: false,
+      status: 404,
+      error: "Ark response job was not found or has expired.",
+    });
+    return;
+  }
+  if (job.jobStatus === "running") {
+    sendJson(req, res, 200, { ok: true, jobId, jobStatus: "running" });
+    return;
+  }
+
+  sendJson(req, res, 200, {
+    ...job.result,
+    jobId,
+    jobStatus: "complete",
+  });
+}
+
 async function handleArkResponse(req, res) {
   const config = getArkConfig();
 
   if (req.method === "GET") {
+    const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
+    const jobId = url.searchParams.get("job")?.trim();
+    if (jobId) {
+      sendArkResponseJob(req, res, jobId);
+      return;
+    }
+
     sendJson(req, res, 200, {
       service: "render-ark-backend",
       endpoint: "ark-response",
@@ -470,26 +568,14 @@ async function handleArkResponse(req, res) {
     return;
   }
 
-  const finishJson = createJsonKeepAliveResponse(req, res);
-
-  const arkResult = await fetchCompatibleArkResponse(config, payload);
-
-  if (!arkResult.ok) {
-    finishJson({
-      ok: false,
-      status: arkResult.status,
-      error: `Ark Responses API request failed: status ${arkResult.status}.`,
-      detail: arkResult.detail,
-      fallback: arkResult.fallback,
-    });
+  if (payload.async) {
+    const jobId = startArkResponseJob(config, payload);
+    sendJson(req, res, 202, { ok: true, jobId, jobStatus: "running" });
     return;
   }
 
-  const text = payload.stream
-    ? await extractStreamingResponseText(arkResult.response)
-    : extractResponseText(await arkResult.response.json());
-
-  finishJson({ ok: true, text, compatibility: arkResult.fallback });
+  const finishJson = createJsonKeepAliveResponse(req, res);
+  finishJson(await runArkResponseRequest(config, payload));
 }
 
 async function handleArkImage(req, res) {

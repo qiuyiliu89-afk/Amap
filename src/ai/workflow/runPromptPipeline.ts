@@ -38,6 +38,8 @@ const definitions = [
   ["export", "导出发布包", "整理 Markdown、JSON、CSV 和资产检查清单。"],
 ] as const;
 
+export const pipelineRuntimeVersion = 2;
+
 export function createInitialPipelineSteps(): PipelineStepState[] {
   return definitions.map(([id, title, description], index) => ({
     id,
@@ -208,6 +210,7 @@ export async function runPromptPipeline({
   let contentFallback = true;
 
   let status: PipelineRunState = {
+    pipelineVersion: pipelineRuntimeVersion,
     status: "running",
     currentStep: 0,
     completedSteps: 0,
