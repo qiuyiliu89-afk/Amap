@@ -1,0 +1,60 @@
+import type { VisualAsset } from "../types/campaign";
+
+export const mockVisualAssets: VisualAsset[] = [
+  {
+    id: "keyframe-01",
+    type: "keyframe",
+    title: "Scattered travel saves",
+    prompt: "9:16 frame, traveler switching between saved posts and map pins, visible planning overload, dark city environment, cyan interface light.",
+    source: "AI visual frame ready",
+    colorHint: "from-slate-700/55 to-blue-500/25",
+  },
+  {
+    id: "keyframe-02",
+    type: "keyframe",
+    title: "AI receives route intent",
+    prompt: "9:16 frame, smartphone map receives time, mood and transit preference, route nodes begin to glow, cinematic product lighting.",
+    source: "AI visual frame ready",
+    colorHint: "from-cyan-400/45 to-blue-600/30",
+  },
+  {
+    id: "keyframe-03",
+    type: "keyframe",
+    title: "Landmarks connected",
+    prompt: "9:16 frame, three real city landmarks connected by a teal route, walking and metro segments, clear subtitle-safe composition.",
+    source: "AI visual frame ready",
+    colorHint: "from-emerald-400/40 to-sky-500/30",
+  },
+  {
+    id: "keyframe-04",
+    type: "keyframe",
+    title: "Route ready to follow",
+    prompt: "9:16 closing frame, traveler enters the city while phone shows completed AI route, map connects to the real street.",
+    source: "AI visual frame ready",
+    colorHint: "from-aqua-400/40 to-signal-400/25",
+  },
+  {
+    id: "cover-01",
+    type: "cover",
+    title: "Xiaohongshu route cover",
+    prompt: "3:4 travel checklist cover, smartphone route map connecting six city stops, cyan and coral accents, Chinese title-safe area.",
+    source: "AI visual frame ready",
+    colorHint: "from-rose-400/30 to-cyan-400/35",
+  },
+  {
+    id: "carousel-01",
+    type: "carousel",
+    title: "Instagram carousel system",
+    prompt: "1:1 five-panel visual system showing saves-to-route transformation, realistic city textures, teal route motif.",
+    source: "AI visual frame ready",
+    colorHint: "from-violet-400/30 to-sky-500/35",
+  },
+  {
+    id: "banner-01",
+    type: "banner",
+    title: "Route horizon banner",
+    prompt: "Wide banner, city horizon with glowing route through landmarks, smartphone map UI and CTA-safe negative space.",
+    source: "AI visual frame ready",
+    colorHint: "from-orange-400/25 to-cyan-400/35",
+  },
+];

@@ -1,0 +1,48 @@
+import type { BatchRow } from "../types/campaign";
+
+export const mockBatchRows: BatchRow[] = [
+  {
+    city: "上海",
+    market: "China",
+    language: "中文",
+    platform: "小红书",
+    format: "图文轮播",
+    hook: "周末不想做攻略？让 AI 给你排一条城市路线",
+    visualStatus: "AI visual frame ready",
+    score: 4.4,
+    exportStatus: "Ready",
+  },
+  {
+    city: "Singapore",
+    market: "SEA",
+    language: "English",
+    platform: "TikTok",
+    format: "9:16 short preview",
+    hook: "Your map knows the next stop before you do",
+    visualStatus: "Keyframes ready",
+    score: 4.1,
+    exportStatus: "Ready",
+  },
+  {
+    city: "杭州",
+    market: "China",
+    language: "中文",
+    platform: "Push",
+    format: "通知",
+    hook: "今天的 AI 路线已生成",
+    visualStatus: "No visual needed",
+    score: 4.5,
+    exportStatus: "Ready",
+  },
+  {
+    city: "Bangkok",
+    market: "SEA",
+    language: "English",
+    platform: "Instagram",
+    format: "Carousel",
+    hook: "Explore Bangkok by mood, not by tabs",
+    visualStatus: "AI visual frame ready",
+    score: 3.8,
+    exportStatus: "Needs rewrite",
+  },
+];

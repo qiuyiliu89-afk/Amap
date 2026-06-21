@@ -1,0 +1,188 @@
+{
+  "source": "reference/home-reference-final.png",
+  "description": "High-fidelity module crops from the final visual reference. Use full modules as images and do not overlay duplicate text.",
+  "assets": [
+    {
+      "file": "public/assets/home-snapshot/hero-right-panel-full.png",
+      "box": [
+        555,
+        130,
+        1075,
+        570
+      ],
+      "size": [
+        520,
+        440
+      ]
+    },
+    {
+      "file": "public/assets/home-snapshot/hero-full-section-reference.png",
+      "box": [
+        45,
+        90,
+        1078,
+        590
+      ],
+      "size": [
+        1033,
+        500
+      ]
+    },
+    {
+      "file": "public/assets/home-snapshot/flow-strip-full.png",
+      "box": [
+        45,
+        605,
+        1075,
+        765
+      ],
+      "size": [
+        1030,
+        160
+      ]
+    },
+    {
+      "file": "public/assets/home-snapshot/feature-cards-row-full.png",
+      "box": [
+        45,
+        790,
+        1078,
+        1138
+      ],
+      "size": [
+        1033,
+        348
+      ]
+    },
+    {
+      "file": "public/assets/home-snapshot/card-multiplatform-full.png",
+      "box": [
+        45,
+        790,
+        286,
+        1138
+      ],
+      "size": [
+        241,
+        348
+      ]
+    },
+    {
+      "file": "public/assets/home-snapshot/card-visual-assets-full.png",
+      "box": [
+        300,
+        790,
+        540,
+        1138
+      ],
+      "size": [
+        240,
+        348
+      ]
+    },
+    {
+      "file": "public/assets/home-snapshot/card-quality-score-full.png",
+      "box": [
+        555,
+        790,
+        795,
+        1138
+      ],
+      "size": [
+        240,
+        348
+      ]
+    },
+    {
+      "file": "public/assets/home-snapshot/card-export-full.png",
+      "box": [
+        810,
+        790,
+        1078,
+        1138
+      ],
+      "size": [
+        268,
+        348
+      ]
+    },
+    {
+      "file": "public/assets/home-snapshot/bottom-summary-full.png",
+      "box": [
+        45,
+        1165,
+        1078,
+        1357
+      ],
+      "size": [
+        1033,
+        192
+      ]
+    },
+    {
+      "file": "public/assets/home-snapshot/platform-visual-cluster-hi.png",
+      "box": [
+        70,
+        815,
+        225,
+        950
+      ],
+      "size": [
+        155,
+        135
+      ]
+    },
+    {
+      "file": "public/assets/home-snapshot/visual-material-hi.png",
+      "box": [
+        325,
+        815,
+        495,
+        955
+      ],
+      "size": [
+        170,
+        140
+      ]
+    },
+    {
+      "file": "public/assets/home-snapshot/score-ring-hi.png",
+      "box": [
+        585,
+        805,
+        725,
+        960
+      ],
+      "size": [
+        140,
+        155
+      ]
+    },
+    {
+      "file": "public/assets/home-snapshot/export-cube-hi.png",
+      "box": [
+        845,
+        810,
+        1015,
+        970
+      ],
+      "size": [
+        170,
+        160
+      ]
+    },
+    {
+      "file": "public/assets/home-snapshot/orbit-planet-hi.png",
+      "box": [
+        60,
+        1185,
+        210,
+        1310
+      ],
+      "size": [
+        150,
+        125
+      ]
+    }
+  ]
+}
